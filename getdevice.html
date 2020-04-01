@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div></div>
+    <script>
+        const DevNames = {
+            audiooutput:'音频输出设备',
+            audioinput:'录音设备',
+            videoinput:'摄像头',
+        }
+        if(!navigator.mediaDevices||!navigator.mediaDevices.enumerateDevices){
+            console.error('不支持webRTC')
+        }else{
+            navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleErr);
+        }
+
+        function gotDevices(devInfos){
+           const ret =  devInfos.reduce((pre,next)=>{
+                let {groupId,kind,...other}=next.toJSON();
+                groupId =  groupId.slice(0,8);
+                const items = pre[groupId] = pre[groupId] ||[];
+                 items.push({...other,kind,name: DevNames[kind]});
+                return pre;
+            },{})
+                console.log(JSON.stringify(ret ,null,4))
+        }
+        function handleErr(err){
+           console.error('获取多媒体设备出错：',err)
+        }
+    </script>
+</body>
+</html>

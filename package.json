@@ -1,0 +1,19 @@
+{
+  "name": "webrtc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "devServer.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "cors": "^2.8.4",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.2",
+    "serve-index": "^1.9.1"
+  },
+  "scripts":{
+    "start":"nodemon server.js"
+  }
+}
