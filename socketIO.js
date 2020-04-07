@@ -15,8 +15,8 @@ require('colors');
 const httpsPort = 4001;
 
 const options = {
-    key: fs.readFileSync(path.join(__dirname, './ssh', 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, './ssh', 'cert.pem')),
+    key: fs.readFileSync(path.join(__dirname, './ssh2', 'key.key')),
+    cert: fs.readFileSync(path.join(__dirname, './ssh2', 'key.pem')),
 };
 
 log4js.configure(

@@ -94,12 +94,17 @@
             });
 
             s.on('message', (room, id, data) => {
+                output.scrollTop = output.scrollHeight;//窗口总是显示最后的内容
                 output.value= output.value + data + '\r';
             })
 
             s.on('userInfos', data => {
                 userInfo.innerHTML =JSON.stringify(data,null,4);
             })
+
+            s.on('disconnect', (socket)=>{
+                console.log('我已经断开连接');
+            });
 
             // 申请加入聊天室
             s.emit('join',roomId.value.trim());
@@ -109,9 +114,10 @@
         leave.onclick = function(){
             join.disabled =false;
             leave.disabled =true;
-            statusText.textContent=`[已离开房间${room}]`;
+            statusText.textContent='[已离开房间]';
+            socket.disconnect();
 
-            socket.emit('leave', room )
+            // socket.emit('leave', room )
         }
 
         // 发送信息到服务器
