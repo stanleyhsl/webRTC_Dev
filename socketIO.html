@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>websocket</title>
+    <!-- google做的浏览器兼容 -->
+    <script src="/lib/adapter.js" ></script>
+    <script src="/lib/socket.io.js" ></script>
+
+    <style >
+        input[type='button']{
+            font-size: 25px;
+            height: 40px;
+        }
+        table{
+            background: #eee;
+            padding: 10px;
+        }
+        #statusText{
+            font-size: 12px;
+        }
+        table{
+            width: 350px;
+        }
+        .divid{
+            border-top: 15px solid white;
+            border-right: 15px solid transparent;;
+            padding-top: 8px;
+        }
+        pre{
+            background-color: black;
+            color:white;
+        }
+    </style>
+</head>
+<body>
+    <h2>带房间号的聊天室</h2>
+    <p>利用socketio的聊天室功能，实现了聊天分房间号</p>
+    <table align="center">
+        <tr>
+            <td>
+                <label>用户名:</label>
+                <input type="text" id="username" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label>房间号:</label>
+                <input type="text" id="roomId" value="123"/>
+                <input type="button" id="join" value="加入"/>
+                <input type="button" id="leave" value="离开" disabled/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label>内容:</label><br>
+                <textarea disabled type="text" id="output" rows="10" cols="50"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input type="button" id="send" value="发送"/>
+                <input type="text" id="message" autofocus/>
+            </td>
+        <tr>
+            <td>
+                <p id="statusText" >[uninit] </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p class="divid" >[聊天室人员] </p>
+                <pre id="userInfo" >[点击获取]</pre>
+            </td>
+        </tr>
+    </table>
+    <script>
+        const usr = username.value = Math.round(Math.random()*100)+'用户';
+        document.title = usr;
+        let socket;
+        
+        // 加入聊天室
+        join.onclick = function(){
+
+            // 建立websocket连接
+            const s = io.connect();
+            // 服务器通知，加入聊天室成功
+            s.on('joined', (room, id,status)=>{
+                this.disabled = true;
+                leave.disabled =false;
+                socket = s;
+                statusText.textContent=`[已连接：${room}-${id}] 当前聊天室${status}`;
+            });
+
+            s.on('message', (room, id, data) => {
+                output.value= output.value + data + '\r';
+            })
+
+            s.on('userInfos', data => {
+                userInfo.innerHTML =JSON.stringify(data,null,4);
+            })
+
+            // 申请加入聊天室
+            s.emit('join',roomId.value.trim());
+        }
+
+        // 离开聊天室
+        leave.onclick = function(){
+            join.disabled =false;
+            leave.disabled =true;
+            statusText.textContent=`[已离开房间${room}]`;
+
+            socket.emit('leave', room )
+        }
+
+        // 发送信息到服务器
+        send.onclick = function sendMessage(e,isClear){
+            const txt = message.value.trim();
+            if(isClear){
+                message.value='';
+                return
+            }
+            if(!socket || !txt){
+                return
+            }
+            socket.emit('message', roomId.value.trim(),socket.id,`[${usr}]: ${txt}` );
+            message.value='';
+        }
+
+        // 获取当前聊天室的用户信息
+        userInfo.onclick = function(){
+            socket.emit('getUserInfos', roomId.value.trim() )
+        }
+
+        
+        document.body.onkeydown= function(event){
+            var e = event || window.event || arguments.callee.caller.arguments[0];
+            if(e && e.keyCode==13){ // enter 键
+                send.onclick();
+            }else if(e && e.keyCode==27){ // 按 Esc 
+                send.onclick(0,true);
+            }
+            
+            console.log(String.fromCharCode(e.keyCode));
+        }; 
+    </script>
+</body>
+</html>

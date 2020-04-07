@@ -10,10 +10,13 @@
     "colors": "^1.1.2",
     "cors": "^2.8.4",
     "express": "^4.17.1",
+    "log4js": "^6.1.2",
     "nodemon": "^2.0.2",
-    "serve-index": "^1.9.1"
+    "serve-index": "^1.9.1",
+    "socket.io": "^2.3.0"
   },
-  "scripts":{
-    "start":"nodemon server.js"
+  "scripts": {
+    "httpweb": "nodemon httpServer.js",
+    "socketio": "nodemon socketIO.js"
   }
 }
