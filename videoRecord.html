@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备测试</title>
+    <!-- google做的浏览器兼容 -->
+    <script src="/lib/adapter.js" ></script>
+
+    <style >
+        video{
+            width: 200px;
+            margin-right: 10px;
+        }
+        .btn{
+            height: 40px;
+            font-size: 16px;
+            min-width: 100px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>音视频设备测试</h2>
+    <div class="row">
+        视频设备：<select id="selectV">
+            <option value="xx">请选择</option>
+        </select><br>
+    </div>
+   
+    <hr>
+    <button class="btn" id="btnstart" disabled>REC</button>
+    <button class="btn" id="btnplay" disabled>play</button>
+    <button class="btn" id="btndown" disabled>download</button>
+    <hr>
+    <video autoplay id="vplayer" controls playsinline></video>
+    <video autoplay id="reclayer" controls playsinline></video>
+
+    <script>
+
+
+        function gotDevices(devInfos) {
+            devInfos.forEach(info=>{
+                const opt = document.createElement('option');
+                opt.text = info.label;
+                opt.value = info.deviceId;
+          
+                if(info.kind === "videoinput"){
+                    selectV.appendChild(opt);
+                }
+            });
+        }
+
+        if(!navigator.mediaDevices||!navigator.mediaDevices.enumerateDevices){
+            throw new Error('不支持webRTC');
+        }
+        navigator.mediaDevices.enumerateDevices()
+        .then(gotDevices)
+        .catch(err=>console.error('获取设备列表出错：',err));
+        
+
+        function start(){
+            const cfg1 = {
+                video: {
+                    width: 150,
+                    height: 100,
+                    frameRate: 5,
+                    facingMode: 'environment' || 'user',
+                    deviceId:selectV.value || undefined
+                },
+                audio:true
+            }
+            const cfg2 = {video:true,audio:true};
+
+            navigator.mediaDevices.getUserMedia(cfg1)
+            .then(stream=>{
+                btnstart.disabled=false;
+                btnstart.stream=stream;
+                // 获取视频约束，debug
+                const [vTrack] = stream.getVideoTracks();
+                const containts = vTrack.getSettings();
+                vplayer.srcObject = stream;
+            })
+            .catch(err=>console.error('获取流出错：',err));
+        }
+
+        // 选择设备
+        selectV.onchange = start;
+
+        // 停止录制
+        btnstart.stopRecording = function(){
+            this.mediaRecorder.stop();
+            btnplay.disabled = false;
+        }
+        
+        // 开始录制
+        btnstart.startRecording=function(){
+            this.streamBuffer = [];
+            const mimeType = 'video/webm;codecs=vp8';
+            if(!MediaRecorder.isTypeSupported(mimeType)){
+                console.log('不支持的媒体类型：',mimeType)
+                return;
+            }
+
+            this.mimeType =  mimeType;
+            const recorder = new MediaRecorder(this.stream,{mimeType});
+            recorder.ondataavailable = e => e && e.data && e.data.size && this.streamBuffer.push(e.data)&&console.log(e.data.size);
+            recorder.start(10);
+            this.mediaRecorder = recorder;
+        }
+
+        btnstart.onclick=function(){
+            const {recording} = this;
+            if(recording){
+               this.innerText ='开始录制';
+                this.recording =false;
+                this.stopRecording();
+            }else{
+                this.innerText ='停止录制';
+                this.recording =true;
+                this.startRecording();
+            }
+        }
+
+        // 播放
+        btnplay.onclick=function(){
+            const blob = new Blob(btnstart.streamBuffer,{type:btnstart.mimeType});
+            reclayer.src = window.URL.createObjectURL(blob);
+            reclayer.srcObject = null;
+            reclayer.play();
+            btndown.disabled = false;
+        }
+
+        // 下载
+        btndown.onclick=function(){
+            if(!reclayer.src)return;
+            const a = document.createElement('a')
+            a.href = reclayer.src;
+            a.style.display='none'
+            a.download ='videofile.webm'
+            a.click();
+        }
+
+    </script>
+</body>
+</html>

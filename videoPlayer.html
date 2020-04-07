@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备测试</title>
+    <!-- google做的浏览器兼容 -->
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js" ></script>
+    <style >
+        #vplayer{
+            width: 200px;
+        }
+        .none {
+            -webkit-filter: none;
+        }
+        .grayscale {
+            -webkit-filter: grayscale(1);
+        }
+        .blur {
+            -webkit-filter: blur(3px);
+        }
+        .invert {
+            -webkit-filter: invert(1);
+        }
+        .sepia {
+            -webkit-filter: sepia(1);
+        }
+    </style>
+</head>
+<body>
+    <h2>音视频设备测试</h2>
+    <div class="row">
+        视频设备：<select id="v-select">
+            <option value="xx">请选择</option>
+        </select><br>
+    </div>
+    音频输入:<select id="si-select"></select><br>
+    音频输出:<select id="so-select"></select><br>
+    特效:<select id="filter">
+        <option value="none">无</option>
+        <option value="grayscale">灰度</option>
+        <option value="blur">模糊</option>
+        <option value="invert">反色</option>
+        <option value="sepia">褪色</option>
+        
+    </select><br>
+    <video autoplay id="vplayer" controls playsinline></video>
+    <hr>
+    <button id="snapshot">快照</button><br>
+    <canvas id="canshot" width="75"></canvas>
+    <script>
+
+        const selectV = document.getElementById('v-select');
+        const selectSI = document.getElementById('si-select');
+        const selectSO = document.getElementById('so-select');
+
+        function gotDevices(devInfos){
+            devInfos.forEach(info=>{
+                const opt = document.createElement('option');
+                opt.text = info.label;
+                opt.value = info.deviceId;
+                if(info.kind === "audioinput"){
+                    selectSI.appendChild(opt);
+                }else if(info.kind === "audiooutput"){
+                    selectSO.appendChild(opt);
+                }else if(info.kind === "videoinput"){
+                    selectV.appendChild(opt);
+                }
+            });
+        }
+
+        if(!navigator.mediaDevices||!navigator.mediaDevices.enumerateDevices){
+            throw new Error('不支持webRTC');
+        }
+        navigator.mediaDevices.enumerateDevices()
+        .then(gotDevices)
+        .catch(err=>console.error('获取设备列表出错：',err));
+        
+
+        function start(){
+            const cfg1 = {
+                video: {
+                    width: 150,
+                    height: 100,
+                    frameRate: 5,
+                    facingMode: 'environment' || 'user',
+                    deviceId:selectV.value || undefined
+                },
+                audio:true
+            }
+            const cfg2 = {video:true,audio:true};
+
+            navigator.mediaDevices.getUserMedia(cfg1)
+            .then(stream=>{
+                // 获取视频约束，debug
+                const [vTrack] = stream.getVideoTracks();
+                const containts = vTrack.getSettings();
+                console.log(JSON.stringify(containts,null,4));
+                vplayer.srcObject = stream;
+            })
+            .catch(err=>console.error('获取流出错：',err));
+        }
+
+        // 选择设备
+        selectV.onchange = start;
+
+        // 添加滤镜
+        filter.onchange = function(){
+            console.log(this.value)
+            vplayer.className=this.value;
+        }
+
+        // 截图
+        snapshot.onclick=()=>{
+            const {width,height}=vplayer.getBoundingClientRect();
+            canshot.width =width;
+            canshot.height =height;
+            canshot.getContext('2d').drawImage(vplayer,0,0,width,height);
+        }
+    </script>
+</body>
+</html>
