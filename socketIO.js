@@ -14,10 +14,10 @@ require('colors');
 // 获取port
 const httpsPort = 4001;
 
-const options = {
-    key: fs.readFileSync(path.join(__dirname, './ssh', 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, './ssh', 'cert.pem')),
-};
+var options = {
+	key : fs.readFileSync('./cert/stanley.com.key'),
+	cert: fs.readFileSync('./cert/stanley.com.crt')
+}
 
 log4js.configure(
     {
