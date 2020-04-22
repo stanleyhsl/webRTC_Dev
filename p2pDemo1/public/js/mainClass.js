@@ -45,6 +45,19 @@ class WebClient {
         }
       }
 
+      // 当对端坌收到对端的数据通道请求，也可以主动创建与对
+      pc.ondatachannel = e => {
+        console.log('被动创建dc', e)
+        let { dc } = this
+        if (dc) return
+
+        dc = e.channel
+        dc.onmessage = this.onReceivData
+        dc.onopen = this.onChannelState
+        dc.onclose = this.onChannelState
+        this.dc = dc
+      }
+
       // 注册收到远端视频流
       pc.ontrack = e => {
         this.log('PC☢ontrack', '收到对端视频流')
@@ -94,6 +107,7 @@ class WebClient {
     }
   }
 
+  // 连接信令服务器，申请加入聊天室，并注册所有回调事件
   join () {
     return new Promise((resove, reject) => {
       //2.连接signla服务器接收，服务器数据
@@ -117,6 +131,7 @@ class WebClient {
         }
 
         this.state = 'joined_conn'
+        this.createDataChan()
         this.log('SIG☄otherjoin', 'state:', this.state)
 
         this.call()
@@ -199,6 +214,13 @@ class WebClient {
         candidate: data.candidate
       })
       this.pc.addIceCandidate(candidate)
+    } else if (data.type === 'fileinfo') {
+      this.revFileInfo.init(
+        data.name,
+        data.filetype,
+        data.size,
+        data.lastModify
+      )
     } else {
       this.log('the message is invalid!', data)
     }
@@ -246,7 +268,108 @@ class WebClient {
       this.socket.emit('leave', this.roomId) //notify server
     }
 
+    if (this.pc) {
+      this.dc.close()
+      this.dc = null
+    }
+
     this.hangup()
     this.closeLocalMedia()
+  }
+
+  //------------   以下是数据收发   --------------
+  dc = null // 与对端连接的数据通道
+  revFileInfo = {
+    fileName: '',
+    fileSize: 0,
+    filetype: '',
+    lastModifyTime: 0,
+    receiveBuffer: [],
+    receivedSize: 0,
+    init (name, filetype, size, lastModify) {
+      this.fileName = name
+      this.filetype = filetype
+      this.fileSize = size
+      this.lastModifyTime = lastModify
+    }
+  }
+
+  onReciveFileFinish = null // 返回数据的回调
+
+  // 接收数据
+  onReceivData = e => {
+    console.log(`Received Message ${e.data.byteLength}`)
+    const { receiveBuffer, fileSize, fileName } = this.revFileInfo
+    let {receivedSize } = this.revFileInfo
+    receiveBuffer.push(e.data)
+    this.revFileInfo.receivedSize += e.data.byteLength
+
+    if (this.revFileInfo.receivedSize === fileSize) {
+      this.onReciveFileFinish(this.revFileInfo, new Blob(receiveBuffer))
+      this.revFileInfo.receiveBuffer = []
+      this.revFileInfo.receivedSize = 0
+    }
+  }
+
+  onChannelState = () => {
+    console.log('【dc state】:', this.dc.readyState)
+  }
+
+  // 创建数据连接通道
+  createDataChan () {
+    const dc = (this.dc = this.pc.createDataChannel('chatchannel'))
+    dc.onmessage = this.onReceivData
+    dc.onopen = this.onChannelState
+    dc.onclose = this.onChannelState
+  }
+
+  // 发送文件，这里缺少同步应答及重传？
+  sendFile (file, processCb) {
+    processCb(0)
+
+    // 通过signal告诉对方数据类型及大小
+    this.sendMessage({
+      type: 'fileinfo',
+      name: file.name,
+      size: file.size,
+      filetype: file.type,
+      lastmodify: file.lastModified
+    })
+
+    let offset = 0
+    const chunkSize = 16384
+    console.log(
+      `File is ${[file.name, file.size, file.type, file.lastModified].join(
+        ' '
+      )}`
+    )
+
+    // Handle 0 size files.
+    downloadAnchor.textContent = ''
+    if (file.size === 0) {
+      bitrateDiv.innerHTML = ''
+        'File is empty, please select a non-empty file'
+      return
+    }
+
+    const fileReader = new FileReader()
+    fileReader.onerror = error => console.error('Error reading file:', error)
+    fileReader.onabort = event => console.log('File reading aborted:', event)
+    fileReader.onload = e => {
+      this.dc.send(e.target.result)
+      offset += e.target.result.byteLength
+      processCb(offset)
+      if (offset < file.size) {
+        readSlice(offset)
+      }
+    }
+
+    var readSlice = curPos => {
+      // console.log('readSlice ', curPos)
+      const slice = file.slice(offset, curPos + chunkSize)
+      fileReader.readAsArrayBuffer(slice)
+    }
+
+    readSlice(0)
   }
 }

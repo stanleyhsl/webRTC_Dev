@@ -2,6 +2,33 @@
 	<head>
 		<title>WebRTC PeerConnection</title>
 		<link href="./css/main.css" rel="stylesheet" />
+		<style>
+			.line{
+				display: flex;
+				align-items: center;
+			}
+
+			#download {
+				position: relative;
+				text-align: center;
+    			background: #eee;
+			}
+
+			#download span {
+				position: absolute;
+				font-size: 18px;
+				color: darkorange;
+				opacity: .7;
+				left: 10%;
+				top: 75px;
+			}
+
+			#download img,
+			#download video {
+				height: 150px;
+			}
+
+		</style>
 	</head>
 
 	<body>
@@ -10,18 +37,19 @@
 
 			<div>
 				<button id="connserver">连接</button>
-				<button id="start" disabled>Start</button>	
-				<button id="mycall" disabled>Call</button>	
-				<button id="hangup" disabled>HangUp</button>	
-				
-				<button id="leave"disabled >Leave</button>	
+				<button id="leave" disabled >Leave</button>	
+				<input type="file" id="fileInput"/> 
+				<button id="sendFile" >发送文件</button>
 			</div>
-			<hr/>
+			<progress id="sendProgress" max="0" value="0" style="width:100%"></progress>
 
 
+			<!-- 视频窗口 -->
 			<div id="preview">
 				<div >
-					<h2>Local:</h2>
+					<div class="line">
+						<h2>Local:</h2> 
+					</div>
 					<video id="localvideo" autoplay playsinline muted></video>
 				</div>
 				<div>
@@ -29,6 +57,9 @@
 					<video id="remotevideo" autoplay playsinline></video>
 				</div>
 			</div>
+
+			<!-- 显示下载文件的a -->
+			<a id="download"></a>
 
 			<span>会话日志:</span><input type="button" onclick="connetstateUl.innerHTML='';" value="清空"></button><hr/>
 			<ul id="connetstateUl"/>
