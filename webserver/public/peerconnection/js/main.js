@@ -62,7 +62,21 @@ function gotRemoteStream(e){
 		remoteVideo.srcObject = e.streams[0];
 	}
 }
-
+var pcConfig = {
+  'iceServers': [{
+    // 'urls': 'turn:stun.stanley.com:3478',
+    'urls': 'turn:stun.al.learningrtc.cn:3478',
+    'credential': "mypasswd",
+    'username': "garrylea"
+  }]
+};
+var pcH = {
+  'iceServers': [{
+    'urls': 'turn:stun.stanley.com:3478',
+    'credential': "stanley",
+    'username': "111"
+  }]
+};
 function call(){
 	var offerOptions = {
 		offerToReceiveAudio: 0,
@@ -70,13 +84,14 @@ function call(){
 	}
 
 	// 1.建立连接
-	pc1 = new RTCPeerConnection();
+	pc1 = new RTCPeerConnection(pcH);
 
 	// 收到STURN/TURN服务器的candinate
 	pc1.onicecandidate = (e) => {
 	
 		// send candidate to peer
 		// receive candidate from peer
+		console.log('pc1 v>>>> !!!',e)
 
 		pc2.addIceCandidate(e.candidate)
 			.catch(handleError);
@@ -89,11 +104,12 @@ function call(){
 	}
 
 
-	pc2 = new RTCPeerConnection();
+	pc2 = new RTCPeerConnection(pcH);
 	pc2.onicecandidate = (e)=> {
 	
 		// send candidate to peer
 		// receive candidate from peer
+		console.log('pc2>>>> !!!',e)
 
 		pc1.addIceCandidate(e.candidate)
 			.catch(handleError);
@@ -132,4 +148,15 @@ function hangup(){
 btnStart.onclick = start;
 btnCall.onclick = call;
 btnHangUp.onclick = hangup;
+
+function test(params) {
+	axios.post('/api/desc',{a:2})
+	.then(function (response) {
+		console.log(response);
+	})
+	.catch(function (error) {
+		console.log(error);
+	});
+}
+
 

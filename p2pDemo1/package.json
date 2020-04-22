@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "express": "^4.17.1",
+    "forever": "^2.0.0",
+    "log4js": "^6.1.2",
+    "nodemon": "^2.0.3",
+    "serve-index": "^1.9.1",
+    "socket.io": "^2.3.0"
+  },
+  "scripts": {
+    "start": "nodemon server.js"
+  }
+}

@@ -1,0 +1,44 @@
+<html>
+	<head>
+		<title>WebRTC PeerConnection</title>
+		<link href="./css/main.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<div>
+
+
+			<div>
+				<button id="connserver">连接</button>
+				<button id="start" disabled>Start</button>	
+				<button id="mycall" disabled>Call</button>	
+				<button id="hangup" disabled>HangUp</button>	
+				
+				<button id="leave"disabled >Leave</button>	
+			</div>
+			<hr/>
+
+
+			<div id="preview">
+				<div >
+					<h2>Local:</h2>
+					<video id="localvideo" autoplay playsinline muted></video>
+				</div>
+				<div>
+					<h2>Remote:</h2>
+					<video id="remotevideo" autoplay playsinline></video>
+				</div>
+			</div>
+
+			<span>会话日志:</span><input type="button" onclick="connetstateUl.innerHTML='';" value="清空"></button><hr/>
+			<ul id="connetstateUl"/>
+
+			
+		</div>
+
+		<script src="/lib/socket.io.js"></script>
+		<script src="/lib/adapter.js"></script>
+		<script src="js/mainClass.js"></script>
+		<script src="js/mainFunc.js"></script>
+	</body>
+</html>
